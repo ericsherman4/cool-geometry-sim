@@ -12,7 +12,7 @@ class g:
     radius_roller = 10
     radius_tracker = 3
     ring_thickness = 0.5
-    inner_ring_omega = -0.05
+    inner_ring_omega = -0.01
     tracker_omega = -inner_ring_omega
     
     
@@ -25,7 +25,8 @@ class time:
     t = 0
     end = 13000
     delta = 0.3
-    rate = 30
+    rate = 60
+    # rate = 5
 
 
 
@@ -70,12 +71,6 @@ class new_rect:
 
     # update the direction in which the rectangle points
     def place_axis(self, axis_in : vector):
-        # original approach, find angle between vectors and then rotate og vector
-        # problem: need to determine sign for theta based on planets positions
-        # theta = math.acos(dot(self.rect.axis, axis_in)/ mag(self.rect.axis) / mag(axis_in))
-        # self.rect.rotate(angle = theta, origin = self.pos_head, axis = vector(0,0,1))
-
-        # second approach
         # extend a vector's magnitude but maintain direction
         self.rect.axis = hat(axis_in) * mag(self.rect.axis)
         self.place_pos(self.pos_head)
@@ -83,15 +78,36 @@ class new_rect:
 
 class hypocycloid:
     def __init__(self):
-        self.outerring = ring(pos = vector(0,0,0), axis = vector(0,0,1), radius = g.radius_big, thickness = g.ring_thickness)
-        self.innerring = ring(pos = vector(0,g.radius_big-g.radius_roller,0), axis = vector(0,0,1), radius = g.radius_roller, thickness = g.ring_thickness)
+        self.outerring = ring(pos = vector(0,0,0), axis = vector(0,0,1), radius = g.radius_big, thickness = g.ring_thickness, visible=False)
+        self.innerring = ring(pos = vector(0,g.radius_big-g.radius_roller,0), axis = vector(0,0,1), radius = g.radius_roller, thickness = g.ring_thickness, visible =False)
         self.tracker = sphere(pos=vector(0,g.radius_big,0), radius = g.radius_tracker, color=color.red, make_trail = True)
 
+        # self.arm = new_rect(pos=vector(0,g.radius_big-g.radius_roller,0), length_dim= g.radius_roller, side_dim=1, color_in=color.red)
+        # self.arm.place_axis(vector(0,1,0))
+        self.dir = True
+        self.offset = 0.0 
 
     def update(self):
         self.innerring.rotate(angle=g.inner_ring_omega, axis=vector(0,0,1), origin=vector(0,0,0))
-        self.tracker.rotate(angle=g.inner_ring_omega, axis = vector(0,0,1), origin= self.innerring.pos)
-        self.tracker.rotate(angle=g.tracker_omega, axis = vector(0,0,1), origin= vector(0,0,0))
+        self.tracker.rotate(angle =-g.inner_ring_omega, axis = vector(0,0,1), origin= vector(0,0,0))
+
+        # if self.dir == True:
+        #     self.offset+= 0.05
+        #     if self.offset > 20:
+        #         self.dir = False
+        # else:
+        #     self.offset-= 0.05
+        #     if self.offset < -9:
+        #         self.dir = True
+
+        totalmag = mag(self.innerring.pos) + self.offset
+        unitvec = hat(self.innerring.pos)
+        newvec = unitvec * totalmag
+        # print(newvec)
+        # print(self.offset)
+
+        self.tracker.rotate(angle = -g.inner_ring_omega*4, axis = vector(0,0,1), origin = newvec)
+        
 
 
 
@@ -118,6 +134,7 @@ if __name__ == "__main__":
 
         # monitor keyboard inputs
         monitor_loop()
+       
 
         # update simulation
         hpc.update()
