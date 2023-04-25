@@ -26,6 +26,10 @@ def monitor_pause():
                 os.kill(os.getpid(), signal.SIGINT)
                 exit()
 
+def monitor_loop():
+    monitor_pause()
+    monitor_terminate()
+
 def kill():
     os.kill(os.getpid(), signal.SIGINT)
     exit()
