@@ -8,10 +8,10 @@ import math
 ##########################
 
 class g: 
-    ratio = 12
     radius_big = 100
-    radius_roller = radius_big/ratio
-    rolling_speed = ratio-1
+    radius_roller = 74
+    rolling_speed = 100/radius_roller-1
+
     radius_tracker = 0.5
     ring_thickness = 0.5
     inner_ring_omega = -0.01
@@ -27,7 +27,7 @@ class time:
     t = 0
     end = 13000
     delta = 0.3
-    rate = 60
+    rate = 200
     # rate = 5
 
 
@@ -60,8 +60,6 @@ class new_rect:
         self.tail_tracker = sphere(radius = 1, pos=self.pos_tail, make_trail = True, color = color_in, visible = True)
         self.head_tracker = sphere(radius = 1, pos=self.pos_head, make_trail = True, color = color.purple, visible = False)
         self.place_pos(pos)
-
-
 
     # pos indicates where you want the end to placed, where the head** is placed
     def place_pos(self, pos_in : vector):
@@ -97,12 +95,17 @@ class new_rect:
     def reset_trail(self):
         self.tail_tracker.clear_trail()
 
+    def visibility(self, isVisible):
+        self.tail_tracker.visible = isVisible
+        self.rect.visible = isVisible
+
+
 
 
 class hypocycloid:
-    def __init__(self):
-        self.outerring = ring(pos = vector(0,0,0), axis = vector(0,0,1), radius = g.radius_big, thickness = g.ring_thickness)
-        self.innerring = ring(pos = vector(0,g.radius_big-g.radius_roller,0), axis = vector(0,0,1), radius = g.radius_roller, thickness = g.ring_thickness)
+    def __init__(self, color_in):
+        self.outerring = ring(pos = vector(0,0,0), axis = vector(0,0,1), radius = g.radius_big, thickness = g.ring_thickness, color = color_in)
+        self.innerring = ring(pos = vector(0,g.radius_big-g.radius_roller,0), axis = vector(0,0,1), radius = g.radius_roller, thickness = g.ring_thickness, color = color_in)
         # self.tracker = sphere(pos=vector(0,g.radius_big,0), radius = g.radius_tracker, color=color.red, make_trail = True)
 
         self.arm = new_rect(pos=vector(0,g.radius_big-g.radius_roller,0), length_dim= g.radius_roller, side_dim=1, color_in=color.red)
@@ -117,6 +120,12 @@ class hypocycloid:
 
         # self.tracker.pos = self.arm.pos_tail
         # self.tracker.rotate(angle = -g.inner_ring_omega*2, axis = vector(0,0,1), origin = self.innerring.pos)
+
+    def visibility(self, isVisible):
+        self.outerring.visible = isVisible
+        self.innerring.visible = isVisible
+        self.arm.visibility(isVisible)
+
         
 
 
@@ -128,14 +137,20 @@ class hypocycloid:
 if __name__ == "__main__":
 
     # create the scene
-    scene = canvas(height=1500,width=1020)
-
+    scene = canvas(height=800,width=800)
 
     # plot coordinate grid
-    # grid = axis(200)q
+    # grid = axis(200)
 
     # create simulation
-    hpc = hypocycloid()
+    hpc = hypocycloid(color.orange)
+
+    # declare variables
+    visible = False
+    run_once = False
+
+    # tune the scene
+    scene.autoscale = False
 
     while time.t < time.end:
         # rate limit loop
@@ -144,7 +159,14 @@ if __name__ == "__main__":
 
         # monitor keyboard inputs
         monitor_loop()
-       
+        
+        if(keyboard.is_pressed('shift+h') and run_once == False):
+            visible = not visible
+            hpc.visibility(visible)
+            run_once = True
+        elif(not keyboard.is_pressed('shift+h')):
+            run_once = False
+
 
         # update simulation
         hpc.update()
