@@ -8,9 +8,11 @@ import math
 ##########################
 
 class g: 
-    radius_big = 50
-    radius_roller = 10
-    radius_tracker = 3
+    ratio = 12
+    radius_big = 100
+    radius_roller = radius_big/ratio
+    rolling_speed = ratio-1
+    radius_tracker = 0.5
     ring_thickness = 0.5
     inner_ring_omega = -0.01
     tracker_omega = -inner_ring_omega
@@ -55,9 +57,13 @@ class new_rect:
         self.pos_head = vector(0,0,0)
         self.pos_tail = vector(length_dim,0,0)
         self.length = length_dim
+        self.tail_tracker = sphere(radius = 1, pos=self.pos_tail, make_trail = True, color = color_in, visible = True)
+        self.head_tracker = sphere(radius = 1, pos=self.pos_head, make_trail = True, color = color.purple, visible = False)
         self.place_pos(pos)
 
-    # pos indicates where you want the end to placed
+
+
+    # pos indicates where you want the end to placed, where the head** is placed
     def place_pos(self, pos_in : vector):
         vec_mag = self.length
         vec_norm = norm(self.rect.axis)
@@ -69,44 +75,48 @@ class new_rect:
         self.pos_head = pos_in
         self.pos_tail = self.pos_head + self.rect.axis
 
+        self.tail_tracker.pos = self.pos_tail
+        self.head_tracker.pos = self.pos_head
+
     # update the direction in which the rectangle points
     def place_axis(self, axis_in : vector):
         # extend a vector's magnitude but maintain direction
         self.rect.axis = hat(axis_in) * mag(self.rect.axis)
         self.place_pos(self.pos_head)
+    
+    # rotate about self.head
+    def rotate(self, angle_in, axis_in):
+        self.rect.rotate(angle = angle_in, axis = axis_in, origin=self.pos_head)
+
+        # update tail pos
+        self.pos_tail = self.rect.axis + self.pos_head
+
+        self.tail_tracker.pos = self.pos_tail
+        self.head_tracker.pos = self.pos_head
+
+    def reset_trail(self):
+        self.tail_tracker.clear_trail()
+
 
 
 class hypocycloid:
     def __init__(self):
-        self.outerring = ring(pos = vector(0,0,0), axis = vector(0,0,1), radius = g.radius_big, thickness = g.ring_thickness, visible=False)
-        self.innerring = ring(pos = vector(0,g.radius_big-g.radius_roller,0), axis = vector(0,0,1), radius = g.radius_roller, thickness = g.ring_thickness, visible =False)
-        self.tracker = sphere(pos=vector(0,g.radius_big,0), radius = g.radius_tracker, color=color.red, make_trail = True)
+        self.outerring = ring(pos = vector(0,0,0), axis = vector(0,0,1), radius = g.radius_big, thickness = g.ring_thickness)
+        self.innerring = ring(pos = vector(0,g.radius_big-g.radius_roller,0), axis = vector(0,0,1), radius = g.radius_roller, thickness = g.ring_thickness)
+        # self.tracker = sphere(pos=vector(0,g.radius_big,0), radius = g.radius_tracker, color=color.red, make_trail = True)
 
-        # self.arm = new_rect(pos=vector(0,g.radius_big-g.radius_roller,0), length_dim= g.radius_roller, side_dim=1, color_in=color.red)
-        # self.arm.place_axis(vector(0,1,0))
-        self.dir = True
-        self.offset = 0.0 
+        self.arm = new_rect(pos=vector(0,g.radius_big-g.radius_roller,0), length_dim= g.radius_roller, side_dim=1, color_in=color.red)
+        self.arm.place_axis(vector(0,1,0))
+        self.arm.reset_trail()
 
     def update(self):
         self.innerring.rotate(angle=g.inner_ring_omega, axis=vector(0,0,1), origin=vector(0,0,0))
-        self.tracker.rotate(angle =-g.inner_ring_omega, axis = vector(0,0,1), origin= vector(0,0,0))
+        # self.tracker.rotate(angle =g.inner_ring_omega, axis = vector(0,0,1), origin= vector(0,0,0))
+        self.arm.place_pos(self.innerring.pos)
+        self.arm.rotate(-g.inner_ring_omega*g.rolling_speed, axis_in=vector(0,0,1))
 
-        # if self.dir == True:
-        #     self.offset+= 0.05
-        #     if self.offset > 20:
-        #         self.dir = False
-        # else:
-        #     self.offset-= 0.05
-        #     if self.offset < -9:
-        #         self.dir = True
-
-        totalmag = mag(self.innerring.pos) + self.offset
-        unitvec = hat(self.innerring.pos)
-        newvec = unitvec * totalmag
-        # print(newvec)
-        # print(self.offset)
-
-        self.tracker.rotate(angle = -g.inner_ring_omega*4, axis = vector(0,0,1), origin = newvec)
+        # self.tracker.pos = self.arm.pos_tail
+        # self.tracker.rotate(angle = -g.inner_ring_omega*2, axis = vector(0,0,1), origin = self.innerring.pos)
         
 
 
